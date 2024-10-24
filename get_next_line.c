@@ -14,7 +14,7 @@
 
 static char	*ft_read_line(int fd, char *stash)
 {
-	int		read_line;
+	ssize_t	read_line;
 	char	*buffer;
 	char	*temp;
 
@@ -29,25 +29,55 @@ static char	*ft_read_line(int fd, char *stash)
 		read_line = read(fd, buffer, BUFFER_SIZE);
 		if (read_line < 0)
 			return (free(buffer), NULL);
-		else if (read_line == 0)
+		if (read_line == 0)
 			break ;
 		buffer[read_line] = '\0';
 		temp = ft_strjoin(stash, buffer);
 		free(stash);
 		stash = temp;
+		if(!stash)
+			return (free(buffer), NULL);
 	}
-	free(buffer);
-	return (stash);
+	return (free(buffer), stash);
 }
 
 static char	*ft_set_line(char *stash)
 {
-	char	*line;
+	size_t	i;
 	char	*new_line;
 
-	new_line = ft_strchr(stash, '\n');
-	if (new_line != NULL)
-	.......
+	if (!stash || stash[0] == '\0')
+		return (NULL);
+	i = 0;
+	while (stash[i] != '\0' && stash[i] != '\n')
+		i++;
+	new_line = ft_substr(stash, 0, i + (stash[i] == '\n'));
+	if (!new_line)
+		return (NULL);
+	return (new_line);
+}
+
+static char	*ft_update(char *stash)
+{
+	size_t	i;
+	char	*remainder;
+
+	i = 0;
+	while (stash[i] != '\n' && stash[i] != '\0')
+		i++;
+	if (stash[i] == '\0')
+	{
+		free(stash);
+		return (NULL);
+	}
+	remainder = ft_substr(stash, i + 1, ft_strlen(stash) - i - 1);
+	free(stash);
+	if (!remainder || remainder[0] == '\0')
+	{
+		free(remainder);
+		return (NULL);
+	}
+	return (remainder);	
 }
 
 char	*get_next_line(int fd)
@@ -62,7 +92,10 @@ char	*get_next_line(int fd)
 		return (NULL);
 	line = ft_set_line(stash);
 	if (!line)
+	{
+		free(stash);
 		return (NULL);
-	free(stash); // ????
+	}
+	stash = ft_update(stash);
 	return (line);
 }
